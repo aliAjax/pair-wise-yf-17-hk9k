@@ -18,7 +18,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -219,4 +221,245 @@ input {
     min-height: 210px;
     padding: 24px;
   }
+}
+
+/* ---------- 页签 ---------- */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 4px 0 18px;
+}
+
+.tab {
+  padding: 0 18px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.chips .chip-active {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 18%, #ffffff);
+  font-weight: 700;
+}
+
+/* ---------- 表单控件补充 ---------- */
+
+select {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  padding: 0 12px;
+  background: #ffffff;
+}
+
+textarea {
+  width: 100%;
+  min-height: 64px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  resize: vertical;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- 表格 ---------- */
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table th {
+  color: #64748b;
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.table tbody tr:hover {
+  background: #f8fbff;
+}
+
+/* ---------- 状态徽标 ---------- */
+
+.badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge.ok {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.badge.pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.badge.reviewed {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge.alert {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge.kind {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* ---------- 提示框 ---------- */
+
+.ok-box,
+.warn-box,
+.stop-box {
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  border: 1px solid;
+}
+
+.ok-box {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #065f46;
+}
+
+.warn-box {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+.stop-box {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.banner {
+  margin-bottom: 14px;
+}
+
+/* ---------- 复核卡片 / 键值行 ---------- */
+
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 14px;
+}
+
+.review-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.review-head {
+  display: grid;
+  gap: 8px;
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.kv span {
+  color: #64748b;
+}
+
+.kv b {
+  font-weight: 600;
+  text-align: right;
+}
+
+.kv-stack {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* ---------- 场馆参数卡片 ---------- */
+
+.venue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 14px;
+}
+
+.venue-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  background: #fbfdff;
+}
+
+/* ---------- 杂项 ---------- */
+
+.muted {
+  color: #64748b;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.mt {
+  margin-top: 22px;
+}
+
+.hint {
+  margin-top: 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.metrics.in-panel {
+  margin: 16px 0;
+}
+
+.metrics.in-panel strong {
+  font-size: 24px;
 }
