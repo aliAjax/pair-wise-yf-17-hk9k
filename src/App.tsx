@@ -1,126 +1,140 @@
+import { useEffect, useState } from "react";
 import "./styles.css";
+import {
+  loadState,
+  makeReading,
+  periodReadings,
+  saveState,
+  uid,
+  type AppState,
+  type NewReadingInput,
+  type Reading,
+  type ReportSignoff,
+} from "./data/store";
+import type { VenueProfile } from "./domain/temperature";
+import EntryForm from "./components/EntryForm";
+import RecheckPage from "./components/RecheckPage";
+import ReportPage from "./components/ReportPage";
+import VenueSettings from "./components/VenueSettings";
 
-const project = {
-  "sourceNo": 7,
-  "id": "hxyfront-62005",
-  "port": 62005,
-  "title": "管风琴音管调音记录",
-  "domain": "管风琴维护",
-  "prompt": "做一个给管风琴维护人员使用的音管调音记录前端项目，可以记录教堂或音乐厅名称、音栓、音管编号、音高、音分偏差、温湿度、簧片状态和维修备注。页面需要有音栓列表、调音偏差表、温湿度记录、异常音管标记和单次维护报告页。",
-  "palette": [
-    "#854d0e",
-    "#475569",
-    "#0ea5e9"
-  ],
-  "metrics": [
-    "音栓数量",
-    "偏差超限",
-    "温度",
-    "湿度"
-  ],
-  "filters": [
-    "主音栓",
-    "簧片音栓",
-    "混合音栓",
-    "低音管"
-  ],
-  "fields": [
-    "场馆名称",
-    "音栓",
-    "音管编号",
-    "音高",
-    "音分偏差",
-    "维修备注"
-  ],
-  "records": [
-    [
-      "St.Mary",
-      "Trumpet 8'",
-      "C#4 +9cent",
-      "簧片需微调"
-    ],
-    [
-      "ConcertHall A",
-      "Principal 4'",
-      "G3 -3cent",
-      "正常"
-    ],
-    [
-      "Abbey Room",
-      "Bourdon 16'",
-      "F2 -12cent",
-      "标记复检"
-    ]
-  ]
-};
+type Tab = "entry" | "recheck" | "report" | "venues";
 
 function App() {
+  const [state, setState] = useState<AppState>(loadState);
+  const [tab, setTab] = useState<Tab>("entry");
+
+  useEffect(() => {
+    saveState(state);
+  }, [state]);
+
+  const pendingCount = state.readings.filter((r) => r.status === "pending").length;
+  const recheckedCount = state.readings.filter((r) => r.status === "rechecked").length;
+
+  const addReading = (venueId: string, input: NewReadingInput) => {
+    const venue = state.venues.find((v) => v.id === venueId);
+    if (!venue) return;
+    setState((s) => ({ ...s, readings: [...s.readings, makeReading(input, venue)] }));
+  };
+
+  const recheckReading = (readingId: string, note: string) => {
+    setState((s) => ({
+      ...s,
+      readings: s.readings.map(
+        (r): Reading =>
+          r.id === readingId
+            ? {
+                ...r,
+                status: "rechecked",
+                recheckNote: note.trim() || "复核通过",
+                recheckedAt: new Date().toISOString(),
+              }
+            : r
+      ),
+    }));
+  };
+
+  // 签发闸门：报告期内存在待复检读数时一律拒绝签发
+  const signReport = (venueId: string) => {
+    setState((s) => {
+      const period = periodReadings(s.readings, s.signoffs, venueId);
+      if (period.length === 0 || period.some((r) => r.status === "pending")) return s;
+      const signoff: ReportSignoff = {
+        id: uid(),
+        venueId,
+        signedAt: new Date().toISOString(),
+        readingCount: period.length,
+      };
+      return { ...s, signoffs: [...s.signoffs, signoff] };
+    });
+  };
+
+  const saveVenue = (venue: VenueProfile) => {
+    setState((s) => ({ ...s, venues: s.venues.map((v) => (v.id === venue.id ? venue : v)) }));
+  };
+
+  const addVenue = () => {
+    setState((s) => ({
+      ...s,
+      venues: [
+        ...s.venues,
+        { id: uid(), name: "新场馆", referenceTemp: 20, flueCoeff: 2.8, reedCoeff: 0.4, recheckThreshold: 3 },
+      ],
+    }));
+  };
+
+  const tabs: Array<{ key: Tab; label: string }> = [
+    { key: "entry", label: "录入与折算" },
+    { key: "recheck", label: pendingCount > 0 ? `复核队列（${pendingCount}）` : "复核队列" },
+    { key: "report", label: "维护报告" },
+    { key: "venues", label: "场馆与折算规则" },
+  ];
+
   return (
     <main className="app">
       <section className="hero">
-        <p>{project.id} · 源提示词{project.sourceNo} · Port {project.port}</p>
-        <h1>{project.title}</h1>
-        <span>{project.prompt}</span>
+        <p>hxyfront-62005 · 管风琴维护</p>
+        <h1>管风琴音管调音记录</h1>
+        <span>
+          现场实测的音分偏差会随温度热胀冷缩。录入时按各场馆保存的基准温度与簧片、唇管敏感系数自动折算回基准温度；
+          同一音管升温或降温超过阈值即列入待复检，复检完成前该场馆的维护报告不能签发，已复核的历史读数继续保留。
+        </span>
       </section>
 
       <section className="metrics">
-        {project.metrics.map((metric: string, index: number) => (
-          <article key={metric}>
-            <small>{metric}</small>
-            <strong>{[86, 14, 7, 32][index] ?? 12}</strong>
-          </article>
+        <article>
+          <small>记录总数</small>
+          <strong>{state.readings.length}</strong>
+        </article>
+        <article>
+          <small>待复检</small>
+          <strong>{pendingCount}</strong>
+        </article>
+        <article>
+          <small>已复核</small>
+          <strong>{recheckedCount}</strong>
+        </article>
+        <article>
+          <small>已签发报告</small>
+          <strong>{state.signoffs.length}</strong>
+        </article>
+      </section>
+
+      <nav className="tabs">
+        {tabs.map((t) => (
+          <button key={t.key} className={tab === t.key ? "active" : ""} onClick={() => setTab(t.key)}>
+            {t.label}
+          </button>
         ))}
-      </section>
+      </nav>
 
-      <section className="workspace">
-        <aside className="panel">
-          <h2>{project.domain}筛选</h2>
-          <div className="chips">
-            {project.filters.map((item: string) => (
-              <button key={item}>{item}</button>
-            ))}
-          </div>
-        </aside>
-
-        <section className="panel form-panel">
-          <div className="heading">
-            <div>
-              <p>专业字段</p>
-              <h2>新增记录</h2>
-            </div>
-            <button className="primary">保存草稿</button>
-          </div>
-          <div className="field-grid">
-            {project.fields.map((field: string) => (
-              <label key={field}>
-                <span>{field}</span>
-                <input placeholder={"填写" + field} />
-              </label>
-            ))}
-          </div>
-        </section>
-      </section>
-
-      <section className="panel">
-        <div className="heading">
-          <div>
-            <p>历史记录</p>
-            <h2>近期工作台</h2>
-          </div>
-          <button>导出摘要</button>
-        </div>
-        <div className="records">
-          {project.records.map((record: string[], index: number) => (
-            <article key={record.join("-")}>
-              <b>{String(index + 1).padStart(2, "0")}</b>
-              <div>
-                <h3>{record[0]}</h3>
-                <p>{record.slice(1).join(" · ")}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+      {tab === "entry" && <EntryForm venues={state.venues} readings={state.readings} onAdd={addReading} />}
+      {tab === "recheck" && (
+        <RecheckPage venues={state.venues} readings={state.readings} onRecheck={recheckReading} />
+      )}
+      {tab === "report" && (
+        <ReportPage venues={state.venues} readings={state.readings} signoffs={state.signoffs} onSign={signReport} />
+      )}
+      {tab === "venues" && <VenueSettings venues={state.venues} onSave={saveVenue} onAdd={addVenue} />}
     </main>
   );
 }
